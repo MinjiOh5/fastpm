@@ -3,6 +3,8 @@
 from nbodykit.lab import Gadget1Catalog
 import numpy
 from argparse import ArgumentParser
+import os
+import shutil
 
 ap = ArgumentParser()
 ap.add_argument('source', help='FastPM snapshot (bigfile)')
@@ -15,6 +17,19 @@ def main(ns):
     cat = Gadget1Catalog(ns.source, ptype=1)
 
     attrs = cat.attrs.copy()
+    
+    new_cat = cat.attrs.copy()
+    cat.attrs.clear()
+    
+    cat.attrs['a.x'] = new_cat['Time']
+    cat.attrs['a.v'] = new_cat['Time']
+    cat.attrs['M0'] = new_cat['Massarr'][1]
+    cat.save(ns.dest, columns=[], dataset='1', header='Header')
+    odir = ns.dest+'/1'
+    if not os.path.exists(odir):
+        os.makedirs(odir)
+    shutil.move(ns.dest+'/Header/attr-v2', ns.dest+'/1/attr-v2')
+    
     cat.attrs.clear()
 
     cat.attrs['MassTable'] = attrs['Massarr']
@@ -45,6 +60,7 @@ def main(ns):
         cat = cat[::ns.subsample]
 
     cat.save(ns.dest, columns=['Position', 'Velocity', 'ID'], dataset='1', header='Header')
+    shutil.copy(ns.dest+'/Header/header', ns.dest+'/1/header')
 
 if __name__ == '__main__':
     ns = ap.parse_args()
